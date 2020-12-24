@@ -13,7 +13,7 @@ namespace EmrecanMuslu\Messenger\Transport\NotificationTransport;
 
 use Doctrine\DBAL\Driver\AbstractPostgreSQLDriver;
 use Doctrine\Persistence\ConnectionRegistry;
-use Symfony\Bridge\Doctrine\RegistryInterface;
+use Doctrine\Persistence\ManagerRegistry;
 use Symfony\Component\Messenger\Exception\TransportException;
 use Symfony\Component\Messenger\Transport\Serialization\SerializerInterface;
 use Symfony\Component\Messenger\Transport\TransportFactoryInterface;
@@ -26,10 +26,10 @@ class DoctrineTransportFactory implements TransportFactoryInterface
 {
     private $registry;
 
-    public function __construct(RegistryInterface $registry)
+    public function __construct(ManagerRegistry $registry)
     {
-        if (!$registry instanceof RegistryInterface && !$registry instanceof ConnectionRegistry) {
-            throw new \TypeError(sprintf('Expected an instance of "%s" or "%s", but got "%s".', RegistryInterface::class, ConnectionRegistry::class, get_debug_type($registry)));
+        if (!$registry instanceof ManagerRegistry && !$registry instanceof ConnectionRegistry) {
+            throw new \TypeError(sprintf('Expected an instance of "%s" or "%s", but got "%s".', ManagerRegistry::class, ConnectionRegistry::class, get_debug_type($registry)));
         }
 
         $this->registry = $registry;
