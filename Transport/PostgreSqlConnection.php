@@ -20,7 +20,7 @@ use Doctrine\DBAL\Schema\Table;
  *
  * @author Kévin Dunglas <dunglas@gmail.com>
  */
-final class CustomPostgreSqlConnection extends CustomConnection
+final class PostgreSqlConnection extends Connection
 {
     /**
      * * use_notify: Set to false to disable the use of LISTEN/NOTIFY. Default: true
@@ -91,7 +91,6 @@ final class CustomPostgreSqlConnection extends CustomConnection
     }
 
     /**
-     * @param Table $createdTable
      * @return string[]
      */
     public function getExtraSetupSqlForTable(Table $createdTable): array

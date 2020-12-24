@@ -9,7 +9,7 @@
  * file that was distributed with this source code.
  */
 
-namespace EmrecanMuslu\Messenger\Transport\NotificationSms;
+namespace EmrecanMuslu\Messenger\Transport\NotificationTransport;
 
 use Doctrine\DBAL\Connection as DbalConnection;
 use Doctrine\DBAL\Schema\Schema;
@@ -23,15 +23,15 @@ use Symfony\Component\Messenger\Transport\TransportInterface;
 /**
  * @author Vincent Touzet <vincent.touzet@gmail.com>
  */
-class CustomDoctrineTransport implements TransportInterface, SetupableTransportInterface, MessageCountAwareInterface, ListableReceiverInterface
+class DoctrineTransport implements TransportInterface, SetupableTransportInterface, MessageCountAwareInterface, ListableReceiverInterface
 {
-    private $customConnection;
+    private $connection;
     private $receiver;
     private $sender;
 
-    public function __construct(CustomConnection $customConnection)
+    public function __construct(Connection $connection)
     {
-        $this->customConnection = $customConnection;
+        $this->connection = $connection;
     }
 
     /**
@@ -95,37 +95,35 @@ class CustomDoctrineTransport implements TransportInterface, SetupableTransportI
      */
     public function setup(): void
     {
-        $this->customConnection->setup();
+        $this->connection->setup();
     }
 
     /**
      * Adds the Table to the Schema if this transport uses this connection.
-     * @param Schema $schema
-     * @param DbalConnection $forConnection
      */
     public function configureSchema(Schema $schema, DbalConnection $forConnection): void
     {
-        $this->customConnection->configureSchema($schema, $forConnection);
+        $this->connection->configureSchema($schema, $forConnection);
     }
 
     /**
      * Adds extra SQL if the given table was created by the Connection.
      *
-     * @param Table $createdTable
      * @return string[]
      */
     public function getExtraSetupSqlForTable(Table $createdTable): array
     {
-        return $this->customConnection->getExtraSetupSqlForTable($createdTable);
+        return $this->connection->getExtraSetupSqlForTable($createdTable);
     }
 
-    private function getReceiver(): CustomDoctrineReceiver
+    private function getReceiver(): DoctrineReceiver
     {
-        return $this->receiver = new CustomDoctrineReceiver($this->customConnection);
+        return $this->receiver = new DoctrineReceiver($this->connection);
     }
 
-    private function getSender(): CustomDoctrineSender
+    private function getSender(): DoctrineSender
     {
-        return $this->sender = new CustomDoctrineSender($this->customConnection);
+        return $this->sender = new DoctrineSender($this->connection);
     }
 }
+//class_alias(DoctrineTransport::class, \Symfony\Component\Messenger\Transport\Doctrine\DoctrineTransport::class);
