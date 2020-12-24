@@ -428,9 +428,9 @@ class Connection implements ResetInterface
             ->setNotnull(true);
         $table->addColumn('event_template', Types::JSON)
             ->setNotnull(true);
-        $table->addColumn('headers', Types::LONGTEXT)
+        $table->addColumn('headers', Types::TEXT)
             ->setNotnull(true);
-        $table->addColumn('encoded_message', Types::LONGTEXT)
+        $table->addColumn('encoded_message', Types::TEXT)
             ->setNotnull(false);
         $table->addColumn('provider_name', Types::STRING)
             ->setLength(50)
