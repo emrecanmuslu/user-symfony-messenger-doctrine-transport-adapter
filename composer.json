@@ -24,12 +24,6 @@
             "/Tests/"
         ]
     },
-    "minimum-stability": "stable",
-    "repositories": [
-        {
-            "type": "gitlab",
-            "url": "git@gitlab.com:emrecanmuslu/user-symfony-messenger-doctrine-transport-adapter.git"
-        }
-    ]
+    "minimum-stability": "stable"
 
 }
