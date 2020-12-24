@@ -428,6 +428,10 @@ class Connection implements ResetInterface
             ->setNotnull(true);
         $table->addColumn('event_template', Types::JSON)
             ->setNotnull(true);
+        $table->addColumn('headers', Types::LONGTEXT)
+            ->setNotnull(true);
+        $table->addColumn('encoded_message', Types::LONGTEXT)
+            ->setNotnull(false);
         $table->addColumn('provider_name', Types::STRING)
             ->setLength(50)
             ->setNotnull(true);
@@ -438,6 +442,8 @@ class Connection implements ResetInterface
             ->setNotnull(false);
         $table->addColumn('push_sent', Types::BOOLEAN)
             ->setNotnull(false);
+        $table->addColumn('handled', Types::BOOLEAN)
+            ->setNotnull(true);
         $table->addColumn('created_at', Types::DATETIME_MUTABLE)
             ->setNotnull(true);
         $table->addColumn('available_at', Types::DATETIME_MUTABLE)
