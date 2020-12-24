@@ -1,0 +1,55 @@
+# Numerous always-ignore extensions
+*.diff
+*.err
+*.orig
+*.log
+*.rej
+*.swo
+*.swp
+*.vi
+*.snapshot
+*~
+*.sass-cache
+*.pyc
+._*
+.directory
+.idea/
+
+# OS or Editor specific
+__MACOSX
+.DS_Store
+Thumbs.db
+.cache
+.project
+.settings
+.idea
+.tmproj
+*.esproj
+nbproject
+.Spotlight-V100
+.Trashes
+_notes
+*.komodoproject
+.komodotools
+.buildpath
+.vagrant
+
+# Version control
+.hg
+.svn
+.CVS
+
+# Docker
+/docker/
+
+# 3rd Party
+/vendor/
+
+# Phars
+/cachetool.phar
+
+###> phpunit/phpunit ###
+.phpunit
+.phpunit.result.cache
+/phpunit.xml
+###< phpunit/phpunit ###
