@@ -9,7 +9,7 @@
  * file that was distributed with this source code.
  */
 
-namespace Symfony\Component\Messenger\Bridge\Doctrine\Transport;
+namespace EmrecanMuslu\Messenger\Transport\NotificationSms;
 
 use Doctrine\DBAL\Connection as DbalConnection;
 use Doctrine\DBAL\Schema\Schema;
