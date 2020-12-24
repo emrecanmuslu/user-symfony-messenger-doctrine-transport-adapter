@@ -1,6 +1,6 @@
 {
     "name": "emrecanmuslu/user-symfony-messenger-doctrine-transport-adapter",
-    "type": "symfony-bridge",
+    "type": "project",
     "description": "Symfony Messenger Doctrine Transport Adapter",
     "license": "proprietary",
     "require": {
@@ -18,11 +18,20 @@
         "doctrine/dbal": "<2.10",
         "doctrine/persistence": "<1.3"
     },
+    "config": {
+        "sort-packages": true
+    },
     "autoload": {
-        "psr-4": { "Symfony\\Component\\Messenger\\Bridge\\Doctrine\\": "" },
-        "exclude-from-classmap": [
-            "/Tests/"
+      "psr-4": {
+        "EmrecanMuslu\\Messenger\\Transport\\": [
+          "src/"
         ]
+      }
+    },
+    "autoload-dev": {
+      "classmap": [
+        "tests"
+      ]
     },
     "minimum-stability": "stable"
 
