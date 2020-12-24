@@ -1,5 +1,5 @@
 {
-    "name": "symfony/user-symfony-messenger-doctrine-transport-adapter",
+    "name": "emrecanmuslu/user-symfony-messenger-doctrine-transport-adapter",
     "type": "symfony-bridge",
     "description": "Symfony Messenger Doctrine Transport Adapter",
     "license": "proprietary",
