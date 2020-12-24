@@ -25,14 +25,14 @@ use Symfony\Component\Messenger\Transport\Serialization\SerializerInterface;
 /**
  * @author Vincent Touzet <vincent.touzet@gmail.com>
  */
-class DoctrineSender implements SenderInterface
+class CustomDoctrineSender implements SenderInterface
 {
-    private $connection;
+    private $customConnection;
     private $serializer;
 
-    public function __construct(Connection $connection, SerializerInterface $serializer = null)
+    public function __construct(CustomConnection $customConnection, SerializerInterface $serializer = null)
     {
-        $this->connection = $connection;
+        $this->customConnection = $customConnection;
         $this->serializer = $serializer ?? new PhpSerializer();
     }
 
@@ -48,7 +48,7 @@ class DoctrineSender implements SenderInterface
         $delay = null !== $delayStamp ? $delayStamp->getDelay() : 0;
 
         try {
-            $id = $this->connection->send($envelope, $encodedMessage['body'], $encodedMessage['headers'] ?? [], $delay);
+            $id = $this->customConnection->send($envelope, $encodedMessage['body'], $encodedMessage['headers'] ?? [], $delay);
         } catch (DBALException | Exception $exception) {
             throw new TransportException($exception->getMessage(), 0, $exception);
         }
@@ -56,4 +56,4 @@ class DoctrineSender implements SenderInterface
         return $envelope->with(new TransportMessageIdStamp($id));
     }
 }
-class_alias(DoctrineSender::class, \Symfony\Component\Messenger\Transport\Doctrine\DoctrineSender::class);
+class_alias(CustomDoctrineSender::class, Symfony\Component\Messenger\Transport\Doctrine\CustomDoctrineSender::class);

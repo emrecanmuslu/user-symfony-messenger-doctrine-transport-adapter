@@ -28,16 +28,16 @@ use Symfony\Component\Messenger\Transport\Serialization\SerializerInterface;
 /**
  * @author Vincent Touzet <vincent.touzet@gmail.com>
  */
-class DoctrineReceiver implements ReceiverInterface, MessageCountAwareInterface, ListableReceiverInterface
+class CustomDoctrineReceiver implements ReceiverInterface, MessageCountAwareInterface, ListableReceiverInterface
 {
     private const MAX_RETRIES = 3;
     private $retryingSafetyCounter = 0;
-    private $connection;
+    private $customConnection;
     private $serializer;
 
-    public function __construct(Connection $connection, SerializerInterface $serializer = null)
+    public function __construct(CustomConnection $customConnection, SerializerInterface $serializer = null)
     {
-        $this->connection = $connection;
+        $this->customConnection = $customConnection;
         $this->serializer = $serializer ?? new PhpSerializer();
     }
 
@@ -47,7 +47,7 @@ class DoctrineReceiver implements ReceiverInterface, MessageCountAwareInterface,
     public function get(): iterable
     {
         try {
-            $doctrineEnvelope = $this->connection->get();
+            $doctrineEnvelope = $this->customConnection->get();
             $this->retryingSafetyCounter = 0; // reset counter
         } catch (RetryableException $exception) {
             // Do nothing when RetryableException occurs less than "MAX_RETRIES"
@@ -76,7 +76,7 @@ class DoctrineReceiver implements ReceiverInterface, MessageCountAwareInterface,
     public function ack(Envelope $envelope): void
     {
         try {
-            $this->connection->ack($this->findDoctrineReceivedStamp($envelope)->getId());
+            $this->customConnection->ack($this->findDoctrineReceivedStamp($envelope)->getId());
         } catch (DBALException | Exception $exception) {
             throw new TransportException($exception->getMessage(), 0, $exception);
         }
@@ -88,7 +88,7 @@ class DoctrineReceiver implements ReceiverInterface, MessageCountAwareInterface,
     public function reject(Envelope $envelope): void
     {
         try {
-            $this->connection->reject($this->findDoctrineReceivedStamp($envelope)->getId());
+            $this->customConnection->reject($this->findDoctrineReceivedStamp($envelope)->getId());
         } catch (DBALException | Exception $exception) {
             throw new TransportException($exception->getMessage(), 0, $exception);
         }
@@ -100,7 +100,7 @@ class DoctrineReceiver implements ReceiverInterface, MessageCountAwareInterface,
     public function getMessageCount(): int
     {
         try {
-            return $this->connection->getMessageCount();
+            return $this->customConnection->getMessageCount();
         } catch (DBALException | Exception $exception) {
             throw new TransportException($exception->getMessage(), 0, $exception);
         }
@@ -112,7 +112,7 @@ class DoctrineReceiver implements ReceiverInterface, MessageCountAwareInterface,
     public function all(int $limit = null): iterable
     {
         try {
-            $doctrineEnvelopes = $this->connection->findAll($limit);
+            $doctrineEnvelopes = $this->customConnection->findAll($limit);
         } catch (DBALException | Exception $exception) {
             throw new TransportException($exception->getMessage(), 0, $exception);
         }
@@ -128,7 +128,7 @@ class DoctrineReceiver implements ReceiverInterface, MessageCountAwareInterface,
     public function find($id): ?Envelope
     {
         try {
-            $doctrineEnvelope = $this->connection->find($id);
+            $doctrineEnvelope = $this->customConnection->find($id);
         } catch (DBALException | Exception $exception) {
             throw new TransportException($exception->getMessage(), 0, $exception);
         }
@@ -160,7 +160,7 @@ class DoctrineReceiver implements ReceiverInterface, MessageCountAwareInterface,
                 'headers' => $data['headers'],
             ]);
         } catch (MessageDecodingFailedException $exception) {
-            $this->connection->reject($data['id']);
+            $this->customConnection->reject($data['id']);
 
             throw $exception;
         }
@@ -172,4 +172,4 @@ class DoctrineReceiver implements ReceiverInterface, MessageCountAwareInterface,
         );
     }
 }
-class_alias(DoctrineReceiver::class, \Symfony\Component\Messenger\Transport\Doctrine\DoctrineReceiver::class);
+class_alias(CustomDoctrineReceiver::class, Symfony\Component\Messenger\Transport\Doctrine\CustomDoctrineReceiver::class);

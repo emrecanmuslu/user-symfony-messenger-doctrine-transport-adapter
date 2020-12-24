@@ -23,15 +23,15 @@ use Symfony\Component\Messenger\Transport\TransportInterface;
 /**
  * @author Vincent Touzet <vincent.touzet@gmail.com>
  */
-class DoctrineTransport implements TransportInterface, SetupableTransportInterface, MessageCountAwareInterface, ListableReceiverInterface
+class CustomDoctrineTransport implements TransportInterface, SetupableTransportInterface, MessageCountAwareInterface, ListableReceiverInterface
 {
-    private $connection;
+    private $customConnection;
     private $receiver;
     private $sender;
 
-    public function __construct(Connection $connection)
+    public function __construct(CustomConnection $customConnection)
     {
-        $this->connection = $connection;
+        $this->customConnection = $customConnection;
     }
 
     /**
@@ -95,35 +95,38 @@ class DoctrineTransport implements TransportInterface, SetupableTransportInterfa
      */
     public function setup(): void
     {
-        $this->connection->setup();
+        $this->customConnection->setup();
     }
 
     /**
      * Adds the Table to the Schema if this transport uses this connection.
+     * @param Schema $schema
+     * @param DbalConnection $forConnection
      */
     public function configureSchema(Schema $schema, DbalConnection $forConnection): void
     {
-        $this->connection->configureSchema($schema, $forConnection);
+        $this->customConnection->configureSchema($schema, $forConnection);
     }
 
     /**
      * Adds extra SQL if the given table was created by the Connection.
      *
+     * @param Table $createdTable
      * @return string[]
      */
     public function getExtraSetupSqlForTable(Table $createdTable): array
     {
-        return $this->connection->getExtraSetupSqlForTable($createdTable);
+        return $this->customConnection->getExtraSetupSqlForTable($createdTable);
     }
 
-    private function getReceiver(): DoctrineReceiver
+    private function getReceiver(): CustomDoctrineReceiver
     {
-        return $this->receiver = new DoctrineReceiver($this->connection);
+        return $this->receiver = new CustomDoctrineReceiver($this->customConnection);
     }
 
-    private function getSender(): DoctrineSender
+    private function getSender(): CustomDoctrineSender
     {
-        return $this->sender = new DoctrineSender($this->connection);
+        return $this->sender = new CustomDoctrineSender($this->customConnection);
     }
 }
-class_alias(DoctrineTransport::class, \Symfony\Component\Messenger\Transport\Doctrine\DoctrineTransport::class);
+class_alias(CustomDoctrineTransport::class, Symfony\Component\Messenger\Transport\Doctrine\CustomDoctrineTransport::class);

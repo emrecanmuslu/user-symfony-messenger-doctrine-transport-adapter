@@ -16,7 +16,7 @@ use Symfony\Component\Messenger\Stamp\NonSendableStampInterface;
 /**
  * @author Vincent Touzet <vincent.touzet@gmail.com>
  */
-class DoctrineReceivedStamp implements NonSendableStampInterface
+class CustomDoctrineReceivedStamp implements NonSendableStampInterface
 {
     private $id;
 
@@ -30,4 +30,4 @@ class DoctrineReceivedStamp implements NonSendableStampInterface
         return $this->id;
     }
 }
-class_alias(DoctrineReceivedStamp::class, \Symfony\Component\Messenger\Transport\Doctrine\DoctrineReceivedStamp::class);
+class_alias(CustomDoctrineReceivedStamp::class, Symfony\Component\Messenger\Transport\Doctrine\CustomDoctrineReceivedStamp::class);

@@ -36,7 +36,7 @@ use Symfony\Contracts\Service\ResetInterface;
  * @author Vincent Touzet <vincent.touzet@gmail.com>
  * @author Kévin Dunglas <dunglas@gmail.com>
  */
-class Connection implements ResetInterface
+class CustomConnection implements ResetInterface
 {
     protected const TABLE_OPTION_NAME = '_symfony_messenger_table_name';
 
@@ -114,12 +114,14 @@ class Connection implements ResetInterface
     }
 
     /**
+     * @param Envelope $envelope
+     * @param string $encodedMessage
+     * @param array $headers
      * @param int $delay The delay in milliseconds
      *
      * @return string The inserted id
      *
-     * @throws \Doctrine\DBAL\DBALException
-     * @throws \Doctrine\DBAL\Exception
+     * @throws TableNotFoundException
      */
     public function send(Envelope $envelope, string $encodedMessage, array $headers, int $delay = 0): string
     {
@@ -477,4 +479,4 @@ class Connection implements ResetInterface
         }
     }
 }
-class_alias(Connection::class, \Symfony\Component\Messenger\Transport\Doctrine\Connection::class);
+class_alias(CustomConnection::class, Symfony\Component\Messenger\Transport\Doctrine\CustomConnection::class);
