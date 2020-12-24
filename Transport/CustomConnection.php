@@ -479,4 +479,3 @@ class CustomConnection implements ResetInterface
         }
     }
 }
-class_alias(CustomConnection::class, Symfony\Component\Messenger\Transport\Doctrine\CustomConnection::class);

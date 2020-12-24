@@ -172,4 +172,3 @@ class CustomDoctrineReceiver implements ReceiverInterface, MessageCountAwareInte
         );
     }
 }
-class_alias(CustomDoctrineReceiver::class, Symfony\Component\Messenger\Transport\Doctrine\CustomDoctrineReceiver::class);

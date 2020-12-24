@@ -62,4 +62,3 @@ class CustomDoctrineTransportFactory implements TransportFactoryInterface
         return 0 === strpos($dsn, 'notificationsms://');
     }
 }
-class_alias(CustomDoctrineTransportFactory::class, Symfony\Component\Messenger\Bridge\Doctrine\Transport\CustomDoctrineTransportFactory::class);

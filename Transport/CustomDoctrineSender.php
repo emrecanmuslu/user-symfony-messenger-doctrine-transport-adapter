@@ -56,4 +56,3 @@ class CustomDoctrineSender implements SenderInterface
         return $envelope->with(new TransportMessageIdStamp($id));
     }
 }
-class_alias(CustomDoctrineSender::class, Symfony\Component\Messenger\Transport\Doctrine\CustomDoctrineSender::class);

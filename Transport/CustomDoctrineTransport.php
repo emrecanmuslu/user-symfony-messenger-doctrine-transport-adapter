@@ -129,4 +129,3 @@ class CustomDoctrineTransport implements TransportInterface, SetupableTransportI
         return $this->sender = new CustomDoctrineSender($this->customConnection);
     }
 }
-class_alias(CustomDoctrineTransport::class, Symfony\Component\Messenger\Transport\Doctrine\CustomDoctrineTransport::class);
