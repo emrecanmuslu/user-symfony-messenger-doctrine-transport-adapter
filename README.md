@@ -1,4 +1,4 @@
-# Symfony Messenger Doktrine Transport Adapter
+# Symfony Messenger Doctrine Transport Adapter
 
 ## Installation
 
@@ -9,7 +9,7 @@ Add the block which you see below into file `composer.json`
   "repositories": [
     {
       "type": "github",
-      "url": "git@github.com:emrecanmuslu/symfony-messenger-doktrine-transport-adapter.git"
+      "url": "git@github.com:emrecanmuslu/user-symfony-messenger-doctrine-transport-adapter.git"
     }
   ]
 }
@@ -20,7 +20,7 @@ Add the line which you see below into file `composer.json`
 ```json
 {
   "require": {
-    "emrecanmuslu/symfony-messenger-doktrine-transport-adapter": "^1.0"
+    "emrecanmuslu/user-symfony-messenger-doctrine-transport-adapter": "^2.0"
   }
 }
 ```
@@ -29,7 +29,7 @@ Add the line which you see below into file `composer.json`
 Execute this to update the new dependency:
 
 ```shell script
-$ composer update emrecanmuslu/symfony-messenger-doktrine-transport-adapter
+$ composer update emrecanmuslu/user-symfony-messenger-doctrine-transport-adapter
 ```
 
 Or you can execute like this to update all dependencies:
