@@ -424,17 +424,12 @@ class Connection implements ResetInterface
             ->setNotnull(true);
         $table->addColumn('order_id', Types::INTEGER)
             ->setNotnull(true);
-        $table->addColumn('event_template', Types::JSON)
-            ->setNotnull(true);
         $table->addColumn('headers', Types::TEXT)
             ->setNotnull(true);
         $table->addColumn('encoded_message', Types::TEXT)
             ->setNotnull(false);
         $table->addColumn('provider_name', Types::STRING)
             ->setLength(50)
-            ->setNotnull(true);
-        $table->addColumn('template_name', Types::STRING)
-            ->setLength(100)
             ->setNotnull(true);
         $table->addColumn('email_sent', Types::BOOLEAN)
             ->setNotnull(false);
