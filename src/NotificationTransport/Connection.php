@@ -123,9 +123,10 @@ class Connection implements ResetInterface
      */
     public function send(Envelope $envelope, string $encodedMessage, array $headers, int $delay = 0): string
     {
-        $message = $envelope->getMessage()->getNotificationSms();
-        $notificationEntity = new NotificationSmsMessage($message);
-        $notificationEntity = $notificationEntity->getNotificationSms();
+        $notificationSmsMessage = $envelope->getMessage()->getMessage();
+        $notificationSmsTemplate = $notificationSmsMessage->getTemplate();
+        $notificationSmsOrderDetail = $notificationSmsMessage->getOrderDetails();
+
         $now = new \DateTime();
         $availableAt = (clone $now)->modify(sprintf('+%d seconds', $delay / 1000));
 
@@ -133,7 +134,6 @@ class Connection implements ResetInterface
             ->insert($this->configuration['table_name'])
             ->values([
                 'order_id' => '?',
-                'event_template' => '?',
                 'encoded_message' => '?',
                 'headers' => '?',
                 'provider_name' => '?',
@@ -146,19 +146,17 @@ class Connection implements ResetInterface
             ]);
 
         $this->executeStatement($queryBuilder->getSQL(), [
-            $notificationEntity->getOrderId(),
-            $notificationEntity->getEventTemplate(),
+            $notificationSmsOrderDetail->getId(),
             $encodedMessage,
             json_encode($headers),
-            $notificationEntity->getProviderName(),
-            $notificationEntity->getTemplateName(),
+            $this->configuration['provider_name'],
+            $notificationSmsTemplate->getCode(),
             null,
             null,
-            $notificationEntity->getHandled(),
+            0,
             $now,
             $availableAt,
         ], [
-            null,
             null,
             null,
             null,
@@ -426,17 +424,12 @@ class Connection implements ResetInterface
             ->setNotnull(true);
         $table->addColumn('order_id', Types::INTEGER)
             ->setNotnull(true);
-        $table->addColumn('event_template', Types::JSON)
-            ->setNotnull(true);
         $table->addColumn('headers', Types::TEXT)
             ->setNotnull(true);
         $table->addColumn('encoded_message', Types::TEXT)
             ->setNotnull(false);
         $table->addColumn('provider_name', Types::STRING)
             ->setLength(50)
-            ->setNotnull(true);
-        $table->addColumn('template_name', Types::STRING)
-            ->setLength(100)
             ->setNotnull(true);
         $table->addColumn('email_sent', Types::BOOLEAN)
             ->setNotnull(false);

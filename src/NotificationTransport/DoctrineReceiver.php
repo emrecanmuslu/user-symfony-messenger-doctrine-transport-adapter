@@ -22,7 +22,6 @@ use Symfony\Component\Messenger\Stamp\TransportMessageIdStamp;
 use Symfony\Component\Messenger\Transport\Receiver\ListableReceiverInterface;
 use Symfony\Component\Messenger\Transport\Receiver\MessageCountAwareInterface;
 use Symfony\Component\Messenger\Transport\Receiver\ReceiverInterface;
-use Symfony\Component\Messenger\Transport\Serialization\PhpSerializer;
 use Symfony\Component\Messenger\Transport\Serialization\SerializerInterface;
 
 /**
@@ -35,10 +34,10 @@ class DoctrineReceiver implements ReceiverInterface, MessageCountAwareInterface,
     private $connection;
     private $serializer;
 
-    public function __construct(Connection $connection, SerializerInterface $serializer = null)
+    public function __construct(Connection $connection, SerializerInterface $serializer)
     {
         $this->connection = $connection;
-        $this->serializer = $serializer ?? new PhpSerializer();
+        $this->serializer = $serializer;
     }
 
     /**
@@ -155,9 +154,11 @@ class DoctrineReceiver implements ReceiverInterface, MessageCountAwareInterface,
     private function createEnvelopeFromData(array $data): Envelope
     {
         try {
+            $headers = json_decode($data['headers'], true);
+            $headers['type'] = 'Modanisa\Model\Event\V1\Event';
             $envelope = $this->serializer->decode([
                 'body' => $data['encoded_message'],
-                'headers' => $data['headers'],
+                'headers' => $headers,
             ]);
         } catch (MessageDecodingFailedException $exception) {
             $this->connection->reject($data['id']);
