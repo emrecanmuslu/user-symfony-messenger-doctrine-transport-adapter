@@ -123,9 +123,10 @@ class Connection implements ResetInterface
      */
     public function send(Envelope $envelope, string $encodedMessage, array $headers, int $delay = 0): string
     {
-        $message = $envelope->getMessage()->getNotificationSms();
-        $notificationEntity = new NotificationSmsMessage($message);
-        $notificationEntity = $notificationEntity->getNotificationSms();
+        $notificationSmsMessage = $envelope->getMessage()->getMessage();
+        $notificationSmsTemplate = $notificationSmsMessage->getTemplate();
+        $notificationSmsOrderDetail = $notificationSmsMessage->getOrderDetails();
+        
         $now = new \DateTime();
         $availableAt = (clone $now)->modify(sprintf('+%d seconds', $delay / 1000));
 
@@ -133,7 +134,6 @@ class Connection implements ResetInterface
             ->insert($this->configuration['table_name'])
             ->values([
                 'order_id' => '?',
-                'event_template' => '?',
                 'encoded_message' => '?',
                 'headers' => '?',
                 'provider_name' => '?',
@@ -146,19 +146,17 @@ class Connection implements ResetInterface
             ]);
 
         $this->executeStatement($queryBuilder->getSQL(), [
-            $notificationEntity->getOrderId(),
-            $notificationEntity->getEventTemplate(),
+            $notificationSmsOrderDetail->getId(),
             $encodedMessage,
             json_encode($headers),
-            $notificationEntity->getProviderName(),
-            $notificationEntity->getTemplateName(),
+            $this->configuration['provider_name'],
+            $notificationSmsTemplate->getCode(),
             null,
             null,
-            $notificationEntity->getHandled(),
+            0,
             $now,
             $availableAt,
         ], [
-            null,
             null,
             null,
             null,
