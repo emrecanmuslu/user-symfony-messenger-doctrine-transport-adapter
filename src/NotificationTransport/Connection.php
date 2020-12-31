@@ -41,10 +41,14 @@ class Connection implements ResetInterface
     protected const TABLE_OPTION_NAME = '_symfony_messenger_table_name';
 
     protected const DEFAULT_OPTIONS = [
-        'table_name' => 'messenger_messages',
-        'provider_name' => 'default',
+        'table_name' => 'notification_sms',
+        'provider_name' => null,
+        'template_name' => null,
         'redeliver_timeout' => 3600,
         'auto_setup' => true,
+        'payload' => [
+            "models" => []
+        ]
     ];
 
     /**
@@ -54,7 +58,7 @@ class Connection implements ResetInterface
      *
      * * table_name: name of the table
      * * connection: name of the Doctrine's entity manager
-     * * queue_name: name of the queue
+     * * provider_name: name of the queue
      * * redeliver_timeout: Timeout before redeliver messages still in handling state (i.e: delivered_at is not null and message is still in table). Default: 3600
      * * auto_setup: Whether the table should be created automatically during send / get. Default: true
      */
@@ -150,7 +154,7 @@ class Connection implements ResetInterface
             $encodedMessage,
             json_encode($headers),
             $this->configuration['provider_name'],
-            $notificationSmsTemplate->getCode(),
+            $this->configuration['template_name'],
             null,
             null,
             0,
@@ -246,7 +250,6 @@ class Connection implements ResetInterface
     public function ack(string $id): bool
     {
         try {
-            // return $this->driverConnection->delete($this->configuration['table_name'], ['id' => $id]) > 0;
             return $this->driverConnection->update($this->configuration['table_name'], ['handled' => true ],['id' => $id]) > 0;
         } catch (DBALException | Exception $exception) {
             throw new TransportException($exception->getMessage(), 0, $exception);
@@ -343,13 +346,17 @@ class Connection implements ResetInterface
             ->where('m.delivered_at is null OR m.delivered_at < ?')
             ->andWhere('m.available_at <= ?')
             ->andWhere('m.provider_name = ?')
+            ->andWhere('m.template_name = ?')
             ->setParameters([
                 $redeliverLimit,
                 $now,
                 $this->configuration['provider_name'],
+                $this->configuration['template_name'],
             ], [
                 Types::DATETIME_MUTABLE,
                 Types::DATETIME_MUTABLE,
+                null,
+                null
             ]);
     }
 
@@ -476,4 +483,3 @@ class Connection implements ResetInterface
         }
     }
 }
-//class_alias(Connection::class, \Symfony\Component\Messenger\Transport\Doctrine\Connection::class);

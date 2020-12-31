@@ -30,4 +30,3 @@ class DoctrineReceivedStamp implements NonSendableStampInterface
         return $this->id;
     }
 }
-//class_alias(DoctrineReceivedStamp::class, \Symfony\Component\Messenger\Transport\Doctrine\DoctrineReceivedStamp::class);
