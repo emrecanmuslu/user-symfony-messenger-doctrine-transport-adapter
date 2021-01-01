@@ -25,6 +25,7 @@ use Doctrine\DBAL\Schema\Schema;
 use Doctrine\DBAL\Schema\Synchronizer\SchemaSynchronizer;
 use Doctrine\DBAL\Schema\Table;
 use Doctrine\DBAL\Types\Types;
+use Psr\Log\LoggerInterface;
 use Symfony\Component\Messenger\Envelope;
 use Symfony\Component\Messenger\Exception\InvalidArgumentException;
 use Symfony\Component\Messenger\Exception\TransportException;
@@ -45,6 +46,7 @@ class Connection implements ResetInterface
         'provider_name' => null,
         'template_name' => null,
         'redeliver_timeout' => 3600,
+        'receive_timeout' => 60000,
         'auto_setup' => true,
         'payload' => [
             "models" => []
@@ -67,12 +69,14 @@ class Connection implements ResetInterface
     protected $queueEmptiedAt;
     private $schemaSynchronizer;
     private $autoSetup;
+    private $logger;
 
-    public function __construct(array $configuration, DBALConnection $driverConnection, SchemaSynchronizer $schemaSynchronizer = null)
+    public function __construct(array $configuration, DBALConnection $driverConnection, SchemaSynchronizer $schemaSynchronizer = null, LoggerInterface $logger)
     {
         $this->configuration = array_replace_recursive(static::DEFAULT_OPTIONS, $configuration);
         $this->driverConnection = $driverConnection;
         $this->schemaSynchronizer = $schemaSynchronizer;
+        $this->logger = $logger;
         $this->autoSetup = $this->configuration['auto_setup'];
     }
 
@@ -209,11 +213,12 @@ class Connection implements ResetInterface
                 $query->getParameterTypes()
             );
             $doctrineEnvelope = $stmt instanceof Result || $stmt instanceof DriverResult ? $stmt->fetchAssociative() : $stmt->fetch();
-
+            
             if (false === $doctrineEnvelope) {
                 $this->driverConnection->commit();
                 $this->queueEmptiedAt = microtime(true) * 1000;
-
+                $this->logger->info('Current consuming cycle has been reached the end. Waiting for next message...');
+                $this->receiveTimeout($this->configuration['receive_timeout']);
                 return null;
             }
             // Postgres can "group" notifications having the same channel and payload
@@ -481,5 +486,13 @@ class Connection implements ResetInterface
                 $this->driverConnection->exec($sql);
             }
         }
+    }
+
+    public function receiveTimeout(int $timeout_ms): void
+    {
+        if ($timeout_ms > 0) {
+            usleep($timeout_ms * 1000);
+        }
+        return; // todo:
     }
 }
