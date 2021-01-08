@@ -1,17 +1,7 @@
 <?php
 
-/*
- * This file is part of the Symfony package.
- *
- * (c) Fabien Potencier <fabien@symfony.com>
- *
- * For the full copyright and license information, please view the LICENSE
- * file that was distributed with this source code.
- */
-
 namespace EmrecanMuslu\Messenger\Transport\NotificationTransport;
 
-use App\Message\NotificationSmsMessage;
 use Doctrine\DBAL\Connection as DBALConnection;
 use Doctrine\DBAL\DBALException;
 use Doctrine\DBAL\Driver\Result as DriverResult;
@@ -31,12 +21,6 @@ use Symfony\Component\Messenger\Exception\InvalidArgumentException;
 use Symfony\Component\Messenger\Exception\TransportException;
 use Symfony\Contracts\Service\ResetInterface;
 
-/**
- * @internal since Symfony 5.1
- *
- * @author Vincent Touzet <vincent.touzet@gmail.com>
- * @author Kévin Dunglas <dunglas@gmail.com>
- */
 class Connection implements ResetInterface
 {
     protected const TABLE_OPTION_NAME = '_symfony_messenger_table_name';
@@ -134,12 +118,16 @@ class Connection implements ResetInterface
         $notificationSmsMessage = $envelope->getMessage()->getMessage();
         $notificationSmsTemplate = $notificationSmsMessage->getTemplate();
         $notificationSmsOrderDetail = $notificationSmsMessage->getOrderDetails();
-        
+        $orderId = $notificationSmsOrderDetail->getId();
+        $template_name = $this->configuration['template_name'];
         $now = new \DateTime();
         $availableAt = (clone $now)->modify(sprintf('+%d seconds', $delay / 1000));
 
-        $queryBuilder = $this->driverConnection->createQueryBuilder()
-            ->insert($this->configuration['table_name'])
+        $checkRowId = $this->createQueryBuilderCheckRow($orderId, $template_name);
+        $queryBuilder = $this->driverConnection->createQueryBuilder();
+
+        if(null === $checkRowId){
+            $queryBuilder->insert($this->configuration['table_name'])
             ->values([
                 'order_id' => '?',
                 'encoded_message' => '?',
@@ -152,18 +140,30 @@ class Connection implements ResetInterface
                 'created_at' => '?',
                 'available_at' => '?',
             ]);
+        }else{
+            $queryBuilder->update($this->configuration['table_name'])
+            ->where("id = $checkRowId")
+            ->set('order_id','?')
+            ->set('encoded_message','?')
+            ->set('headers','?')
+            ->set('provider_name','?')
+            ->set('template_name','?')
+            ->set('handled','?')
+            ->set('created_at','?')
+            ->set('available_at','?');
+        }
+        
 
-        $this->executeStatement($queryBuilder->getSQL(), [
-            $notificationSmsOrderDetail->getId(),
+        
+        $queryBuilder->setParameters([
+            $orderId,
             $encodedMessage,
             json_encode($headers),
             $this->configuration['provider_name'],
-            $this->configuration['template_name'],
-            null,
-            null,
+            $template_name,
             0,
             $now,
-            $availableAt,
+            $availableAt
         ], [
             null,
             null,
@@ -171,11 +171,13 @@ class Connection implements ResetInterface
             null,
             null,
             null,
-            null,
-            null,
             Types::DATETIME_MUTABLE,
-            Types::DATETIME_MUTABLE,
+            Types::DATETIME_MUTABLE
         ]);
+        
+        $sql = $queryBuilder->getSQL();
+
+        $this->executeStatement($queryBuilder->getSQL(), $queryBuilder->getParameters(), $queryBuilder->getParameterTypes());
 
         return $this->driverConnection->lastInsertId();
     }
@@ -370,6 +372,24 @@ class Connection implements ResetInterface
         return $this->driverConnection->createQueryBuilder()
             ->select('m.*')
             ->from($this->configuration['table_name'], 'm');
+    }
+
+    private function createQueryBuilderCheckRow(int $orderId, string $template_name): int
+    {
+        $queryBuilder = $this->driverConnection->createQueryBuilder()
+            ->select('*')
+            ->from($this->configuration['table_name'])
+            ->where('order_id = ?')
+            ->andWhere('template_name = ?')
+            ->setParameters([
+                $orderId,
+                $template_name,
+            ])
+            ->setMaxResults(1);
+        
+        $result = $this->executeQuery($queryBuilder->getSQL(), $queryBuilder->getParameters(), $queryBuilder->getParameterTypes());
+
+        return $result instanceof Result || $result instanceof DriverResult ? $result->fetchOne() : $result->fetchColumn();
     }
 
     private function executeQuery(string $sql, array $parameters = [], array $types = [])

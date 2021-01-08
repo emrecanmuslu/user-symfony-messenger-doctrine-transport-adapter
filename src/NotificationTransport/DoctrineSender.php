@@ -1,14 +1,5 @@
 <?php
 
-/*
- * This file is part of the Symfony package.
- *
- * (c) Fabien Potencier <fabien@symfony.com>
- *
- * For the full copyright and license information, please view the LICENSE
- * file that was distributed with this source code.
- */
-
 namespace EmrecanMuslu\Messenger\Transport\NotificationTransport;
 
 use Doctrine\DBAL\DBALException;
@@ -20,10 +11,6 @@ use Symfony\Component\Messenger\Stamp\TransportMessageIdStamp;
 use Symfony\Component\Messenger\Transport\Sender\SenderInterface;
 use Symfony\Component\Messenger\Transport\Serialization\SerializerInterface;
 
-
-/**
- * @author Vincent Touzet <vincent.touzet@gmail.com>
- */
 class DoctrineSender implements SenderInterface
 {
     private $connection;

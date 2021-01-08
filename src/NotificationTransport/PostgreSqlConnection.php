@@ -1,25 +1,9 @@
 <?php
 
-/*
- * This file is part of the Symfony package.
- *
- * (c) Fabien Potencier <fabien@symfony.com>
- *
- * For the full copyright and license information, please view the LICENSE
- * file that was distributed with this source code.
- */
-
 namespace EmrecanMuslu\Messenger\Transport\NotificationTransport;
 
 use Doctrine\DBAL\Schema\Table;
 
-/**
- * Uses PostgreSQL LISTEN/NOTIFY to push messages to workers.
- *
- * @internal
- *
- * @author Kévin Dunglas <dunglas@gmail.com>
- */
 final class PostgreSqlConnection extends Connection
 {
     /**
