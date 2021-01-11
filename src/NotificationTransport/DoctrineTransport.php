@@ -104,7 +104,7 @@ class DoctrineTransport implements TransportInterface, SetupableTransportInterfa
      */
     public function getExtraSetupSqlForTable(Table $createdTable): array
     {
-        return $this->connection->getExtraSetupSqlForTable($createdTable);
+        //return $this->connection->getExtraSetupSqlForTable($createdTable);
     }
 
     private function getReceiver(): DoctrineReceiver

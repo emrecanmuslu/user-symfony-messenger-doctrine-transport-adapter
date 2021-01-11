@@ -2,7 +2,6 @@
 
 namespace EmrecanMuslu\Messenger\Transport\NotificationTransport;
 
-use Doctrine\DBAL\Driver\AbstractPostgreSQLDriver;
 use Doctrine\Persistence\ConnectionRegistry;
 use Doctrine\Persistence\ManagerRegistry;
 use Psr\Log\LoggerInterface;
@@ -30,20 +29,16 @@ class DoctrineTransportFactory implements TransportFactoryInterface
     {
         $useNotify = ($options['use_notify'] ?? true);
         unset($options['transport_name'], $options['use_notify']);
-        // Always allow PostgreSQL-specific keys, to be able to transparently fallback to the native driver when LISTEN/NOTIFY isn't available
-        $configuration = PostgreSqlConnection::buildConfiguration($dsn, $options);
+        
+        $configuration = Connection::buildConfiguration($dsn, $options);
 
         try {
             $driverConnection = $this->registry->getConnection($configuration['connection']);
         } catch (\InvalidArgumentException $e) {
             throw new TransportException(sprintf('Could not find Doctrine connection from Messenger DSN "%s".', $dsn), 0, $e);
         }
-
-        if ($useNotify && $driverConnection->getDriver() instanceof AbstractPostgreSQLDriver) {
-            $connection = new PostgreSqlConnection($configuration, $driverConnection);
-        } else {
-            $connection = new Connection($configuration, $driverConnection, null, $this->logger);
-        }
+        
+        $connection = new Connection($configuration, $driverConnection, null, $this->logger);
 
         return new DoctrineTransport($connection, $serializer);
     }
