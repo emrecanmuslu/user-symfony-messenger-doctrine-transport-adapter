@@ -126,7 +126,7 @@ class Connection implements ResetInterface
         $checkRowId = $this->createQueryBuilderCheckRow($orderId, $template_name);
         $queryBuilder = $this->driverConnection->createQueryBuilder();
 
-        if(null === $checkRowId){
+        if(null === $checkRowId || 0 === $checkRowId){
             $queryBuilder->insert($this->configuration['table_name'])
             ->values([
                 'order_id' => '?',
@@ -134,8 +134,6 @@ class Connection implements ResetInterface
                 'headers' => '?',
                 'provider_name' => '?',
                 'template_name' => '?',
-                'email_sent' => '?',
-                'push_sent' => '?',
                 'handled' => '?',
                 'created_at' => '?',
                 'available_at' => '?',
@@ -227,6 +225,8 @@ class Connection implements ResetInterface
             // We need to be sure to empty the queue before blocking again
             $this->queueEmptiedAt = null;
 
+            $doctrineEnvelope = $this->decodeEnvelopeHeaders($doctrineEnvelope);
+
             $queryBuilder = $this->driverConnection->createQueryBuilder()
                 ->update($this->configuration['table_name'])
                 ->set('delivered_at', '?')
@@ -266,7 +266,7 @@ class Connection implements ResetInterface
     public function reject(string $id): bool
     {
         try {
-            return $this->driverConnection->delete($this->configuration['table_name'], ['id' => $id]) > 0;
+            return $this->driverConnection->update($this->configuration['table_name'], ['handled' => true ],['id' => $id]) > 0;
         } catch (DBALException | Exception $exception) {
             throw new TransportException($exception->getMessage(), 0, $exception);
         }
@@ -276,8 +276,8 @@ class Connection implements ResetInterface
     {
         $configuration = $this->driverConnection->getConfiguration();
         $assetFilter = $configuration->getSchemaAssetsFilter();
-        $configuration->setSchemaAssetsFilter(null);
-        $this->updateSchema();
+        //$configuration->setSchemaAssetsFilter(null);
+        //$this->updateSchema();
         $configuration->setSchemaAssetsFilter($assetFilter);
         $this->autoSetup = false;
     }
@@ -333,7 +333,7 @@ class Connection implements ResetInterface
             return;
         }
 
-        $this->addTableToSchema($schema);
+        //$this->addTableToSchema($schema);
     }
 
     /**
@@ -440,72 +440,24 @@ class Connection implements ResetInterface
 
     private function getSchema(): Schema
     {
-        $schema = new Schema([], [], $this->driverConnection->getSchemaManager()->createSchemaConfig());
-        $this->addTableToSchema($schema);
-
-        return $schema;
+        //
     }
 
     private function addTableToSchema(Schema $schema): void
     {
-        $table = $schema->createTable($this->configuration['table_name']);
-        // add an internal option to mark that we created this & the non-namespaced table name
-        $table->addOption(self::TABLE_OPTION_NAME, $this->configuration['table_name']);
-        $table->addColumn('id', Types::BIGINT)
-            ->setAutoincrement(true)
-            ->setNotnull(true);
-        $table->addColumn('order_id', Types::INTEGER)
-            ->setNotnull(true);
-        $table->addColumn('headers', Types::TEXT)
-            ->setNotnull(true);
-        $table->addColumn('encoded_message', Types::TEXT)
-            ->setNotnull(false);
-        $table->addColumn('provider_name', Types::STRING)
-            ->setLength(50)
-            ->setNotnull(true);
-        $table->addColumn('email_sent', Types::BOOLEAN)
-            ->setNotnull(false);
-        $table->addColumn('push_sent', Types::BOOLEAN)
-            ->setNotnull(false);
-        $table->addColumn('handled', Types::BOOLEAN)
-            ->setNotnull(true);
-        $table->addColumn('created_at', Types::DATETIME_MUTABLE)
-            ->setNotnull(true);
-        $table->addColumn('available_at', Types::DATETIME_MUTABLE)
-            ->setNotnull(true);
-        $table->addColumn('delivered_at', Types::DATETIME_MUTABLE)
-            ->setNotnull(false);
-        $table->setPrimaryKey(['id']);
-        $table->addIndex(['provider_name']);
-        $table->addIndex(['available_at']);
-        $table->addIndex(['delivered_at']);
+        //
     }
 
     private function decodeEnvelopeHeaders(array $doctrineEnvelope): array
     {
-        // $doctrineEnvelope['headers'] = json_decode($doctrineEnvelope['headers'], true);
+        $doctrineEnvelope['headers'] = json_decode($doctrineEnvelope['headers'], true);
 
         return $doctrineEnvelope;
     }
 
     private function updateSchema(): void
     {
-        if (null !== $this->schemaSynchronizer) {
-            $this->schemaSynchronizer->updateSchema($this->getSchema(), true);
-
-            return;
-        }
-
-        $comparator = new Comparator();
-        $schemaDiff = $comparator->compare($this->driverConnection->getSchemaManager()->createSchema(), $this->getSchema());
-
-        foreach ($schemaDiff->toSaveSql($this->driverConnection->getDatabasePlatform()) as $sql) {
-            if (method_exists($this->driverConnection, 'executeStatement')) {
-                $this->driverConnection->executeStatement($sql);
-            } else {
-                $this->driverConnection->exec($sql);
-            }
-        }
+        //
     }
 
     public function receiveTimeout(int $timeout_ms): void

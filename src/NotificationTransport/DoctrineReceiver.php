@@ -142,7 +142,6 @@ class DoctrineReceiver implements ReceiverInterface, MessageCountAwareInterface,
     private function createEnvelopeFromData(array $data): Envelope
     {
         try {
-            $headers = json_decode($data['headers'], true);
             $headers['type'] = 'Modanisa\Model\Event\V1\Event';
             $envelope = $this->serializer->decode([
                 'body' => $data['encoded_message'],

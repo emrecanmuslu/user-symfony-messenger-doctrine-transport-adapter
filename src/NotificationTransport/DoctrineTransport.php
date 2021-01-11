@@ -94,7 +94,7 @@ class DoctrineTransport implements TransportInterface, SetupableTransportInterfa
      */
     public function configureSchema(Schema $schema, DbalConnection $forConnection): void
     {
-        $this->connection->configureSchema($schema, $forConnection);
+        //$this->connection->configureSchema($schema, $forConnection);
     }
 
     /**
