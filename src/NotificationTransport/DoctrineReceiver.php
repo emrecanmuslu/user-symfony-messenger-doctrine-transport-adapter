@@ -141,16 +141,22 @@ class DoctrineReceiver implements ReceiverInterface, MessageCountAwareInterface,
 
     private function createEnvelopeFromData(array $data): Envelope
     {
-        try {
-            $headers['type'] = 'Modanisa\Model\Event\V1\Event';
-            $envelope = $this->serializer->decode([
-                'body' => $data['encoded_message'],
-                'headers' => $headers,
-            ]);
-        } catch (MessageDecodingFailedException $exception) {
-            $this->connection->reject($data['id']);
+        $conf = $this->connection->getConfiguration();
+        
+        foreach ($conf['payload']['models'] as $fullyQualifiedPayloadClassName) {
+            $data['headers']['type'] = $fullyQualifiedPayloadClassName;
+            try {
+                $envelope = $this->serializer->decode([
+                    'body' => $data['encoded_message'],
+                    'headers' => $data['headers'],
+                ]);
+                break;
+            } catch (MessageDecodingFailedException $exception) {
+                $this->connection->reject($data['id']);
 
-            throw $exception;
+                throw $exception;
+            }
+
         }
 
 
