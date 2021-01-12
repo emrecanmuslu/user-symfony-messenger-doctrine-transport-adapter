@@ -6,22 +6,18 @@ use Doctrine\DBAL\Connection as DBALConnection;
 use Doctrine\DBAL\DBALException;
 use Doctrine\DBAL\Driver\Result as DriverResult;
 use Doctrine\DBAL\Exception;
-use Doctrine\DBAL\Exception\TableNotFoundException;
-use Doctrine\DBAL\LockMode;
 use Doctrine\DBAL\Query\QueryBuilder;
 use Doctrine\DBAL\Result;
 use Doctrine\DBAL\Schema\Comparator;
 use Doctrine\DBAL\Schema\Schema;
-use Doctrine\DBAL\Schema\Synchronizer\SchemaSynchronizer;
 use Doctrine\DBAL\Schema\Table;
 use Doctrine\DBAL\Types\Types;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\Messenger\Envelope;
 use Symfony\Component\Messenger\Exception\InvalidArgumentException;
 use Symfony\Component\Messenger\Exception\TransportException;
-use Symfony\Contracts\Service\ResetInterface;
 
-class Connection implements ResetInterface
+class Connection
 {
     protected const TABLE_OPTION_NAME = '_symfony_messenger_table_name';
 
@@ -50,23 +46,15 @@ class Connection implements ResetInterface
      */
     protected $configuration = [];
     protected $driverConnection;
-    protected $queueEmptiedAt;
-    private $schemaSynchronizer;
     private $autoSetup;
     private $logger;
 
-    public function __construct(array $configuration, DBALConnection $driverConnection, SchemaSynchronizer $schemaSynchronizer = null, LoggerInterface $logger)
+    public function __construct(array $configuration, DBALConnection $driverConnection, LoggerInterface $logger)
     {
         $this->configuration = array_replace_recursive(static::DEFAULT_OPTIONS, $configuration);
         $this->driverConnection = $driverConnection;
-        $this->schemaSynchronizer = $schemaSynchronizer;
         $this->logger = $logger;
         $this->autoSetup = $this->configuration['auto_setup'];
-    }
-
-    public function reset()
-    {
-        $this->queueEmptiedAt = null;
     }
 
     public function getConfiguration(): array
@@ -151,8 +139,6 @@ class Connection implements ResetInterface
             ->set('available_at','?');
         }
         
-
-        
         $queryBuilder->setParameters([
             $orderId,
             $encodedMessage,
@@ -192,23 +178,9 @@ class Connection implements ResetInterface
                 ->orderBy('available_at', 'ASC')
                 ->setMaxResults(1);
 
-            // Append pessimistic write lock to FROM clause if db platform supports it
-            $sql = $query->getSQL();
-            if (($fromPart = $query->getQueryPart('from')) &&
-                ($table = $fromPart[0]['table'] ?? null) &&
-                ($alias = $fromPart[0]['alias'] ?? null)
-            ) {
-                $fromClause = sprintf('%s %s', $table, $alias);
-                $sql = str_replace(
-                    sprintf('FROM %s WHERE', $fromClause),
-                    sprintf('FROM %s WHERE', $this->driverConnection->getDatabasePlatform()->appendLockHint($fromClause, LockMode::PESSIMISTIC_WRITE)),
-                    $sql
-                );
-            }
-
-            // use SELECT ... FOR UPDATE to lock table
+            // use SELECT
             $stmt = $this->executeQuery(
-                $sql.' '.$this->driverConnection->getDatabasePlatform()->getWriteLockSQL(),
+                $query->getSQL(),
                 $query->getParameters(),
                 $query->getParameterTypes()
             );
@@ -216,14 +188,10 @@ class Connection implements ResetInterface
             
             if (false === $doctrineEnvelope) {
                 $this->driverConnection->commit();
-                $this->queueEmptiedAt = microtime(true) * 1000;
                 $this->logger->info('Current consuming cycle has been reached the end. Waiting for next message...');
                 $this->receiveTimeout($this->configuration['receive_timeout']);
                 return null;
             }
-            // Postgres can "group" notifications having the same channel and payload
-            // We need to be sure to empty the queue before blocking again
-            $this->queueEmptiedAt = null;
 
             $doctrineEnvelope = $this->decodeEnvelopeHeaders($doctrineEnvelope);
 
@@ -244,11 +212,6 @@ class Connection implements ResetInterface
             return $doctrineEnvelope;
         } catch (\Throwable $e) {
             $this->driverConnection->rollBack();
-
-            if ($this->autoSetup && $e instanceof TableNotFoundException) {
-                $this->setup();
-                goto get;
-            }
 
             throw $e;
         }
@@ -276,8 +239,6 @@ class Connection implements ResetInterface
     {
         $configuration = $this->driverConnection->getConfiguration();
         $assetFilter = $configuration->getSchemaAssetsFilter();
-        //$configuration->setSchemaAssetsFilter(null);
-        //$this->updateSchema();
         $configuration->setSchemaAssetsFilter($assetFilter);
         $this->autoSetup = false;
     }
@@ -317,31 +278,6 @@ class Connection implements ResetInterface
         $data = $stmt instanceof Result || $stmt instanceof DriverResult ? $stmt->fetchAssociative() : $stmt->fetch();
 
         return false === $data ? null : $this->decodeEnvelopeHeaders($data);
-    }
-
-    /**
-     * @internal
-     */
-    public function configureSchema(Schema $schema, DBALConnection $forConnection): void
-    {
-        // only update the schema for this connection
-        if ($forConnection !== $this->driverConnection) {
-            return;
-        }
-
-        if ($schema->hasTable($this->configuration['table_name'])) {
-            return;
-        }
-
-        //$this->addTableToSchema($schema);
-    }
-
-    /**
-     * @internal
-     */
-    public function getExtraSetupSqlForTable(Table $createdTable): array
-    {
-        return [];
     }
 
     private function createAvailableMessagesQueryBuilder(): QueryBuilder
@@ -396,16 +332,8 @@ class Connection implements ResetInterface
     {
         try {
             $stmt = $this->driverConnection->executeQuery($sql, $parameters, $types);
-        } catch (TableNotFoundException $e) {
-            if ($this->driverConnection->isTransactionActive()) {
-                throw $e;
-            }
-
-            // create table
-            if ($this->autoSetup) {
-                $this->setup();
-            }
-            $stmt = $this->driverConnection->executeQuery($sql, $parameters, $types);
+        } catch (\Throwable $e) {
+            throw $e;
         }
 
         return $stmt;
@@ -419,33 +347,11 @@ class Connection implements ResetInterface
             } else {
                 $stmt = $this->driverConnection->executeUpdate($sql, $parameters, $types);
             }
-        } catch (TableNotFoundException $e) {
-            if ($this->driverConnection->isTransactionActive()) {
-                throw $e;
-            }
-
-            // create table
-            if ($this->autoSetup) {
-                $this->setup();
-            }
-            if (method_exists($this->driverConnection, 'executeStatement')) {
-                $stmt = $this->driverConnection->executeStatement($sql, $parameters, $types);
-            } else {
-                $stmt = $this->driverConnection->executeUpdate($sql, $parameters, $types);
-            }
+        } catch (\Throwable $e) {
+            throw $e;
         }
 
         return $stmt;
-    }
-
-    private function getSchema(): Schema
-    {
-        //
-    }
-
-    private function addTableToSchema(Schema $schema): void
-    {
-        //
     }
 
     private function decodeEnvelopeHeaders(array $doctrineEnvelope): array
@@ -455,16 +361,11 @@ class Connection implements ResetInterface
         return $doctrineEnvelope;
     }
 
-    private function updateSchema(): void
-    {
-        //
-    }
-
     public function receiveTimeout(int $timeout_ms): void
     {
         if ($timeout_ms > 0) {
             usleep($timeout_ms * 1000);
         }
-        return; // todo:
+        return;
     }
 }

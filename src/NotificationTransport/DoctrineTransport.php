@@ -89,24 +89,6 @@ class DoctrineTransport implements TransportInterface, SetupableTransportInterfa
         $this->connection->setup();
     }
 
-    /**
-     * Adds the Table to the Schema if this transport uses this connection.
-     */
-    public function configureSchema(Schema $schema, DbalConnection $forConnection): void
-    {
-        //$this->connection->configureSchema($schema, $forConnection);
-    }
-
-    /**
-     * Adds extra SQL if the given table was created by the Connection.
-     *
-     * @return string[]
-     */
-    public function getExtraSetupSqlForTable(Table $createdTable): array
-    {
-        //return $this->connection->getExtraSetupSqlForTable($createdTable);
-    }
-
     private function getReceiver(): DoctrineReceiver
     {
         return $this->receiver = new DoctrineReceiver($this->connection, $this->serializer);

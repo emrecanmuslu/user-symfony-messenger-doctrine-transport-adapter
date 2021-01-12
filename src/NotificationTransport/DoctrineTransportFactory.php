@@ -38,7 +38,7 @@ class DoctrineTransportFactory implements TransportFactoryInterface
             throw new TransportException(sprintf('Could not find Doctrine connection from Messenger DSN "%s".', $dsn), 0, $e);
         }
         
-        $connection = new Connection($configuration, $driverConnection, null, $this->logger);
+        $connection = new Connection($configuration, $driverConnection, $this->logger);
 
         return new DoctrineTransport($connection, $serializer);
     }
